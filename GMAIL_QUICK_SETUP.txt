@@ -1,0 +1,67 @@
+# ISAC Radar Gmail Setup - Quick Reference
+
+## 3-Minute Setup
+
+### 1. Get App Password (2 min)
+```
+https://myaccount.google.com/apppasswords
+→ Select: Mail + Windows Computer
+→ Copy 16-character password
+```
+
+### 2. Configure in Notebook
+```python
+YOUR_GMAIL = "your-email@gmail.com"
+YOUR_APP_PASSWORD = "xxxx xxxx xxxx xxxx"
+```
+
+### 3. Test
+Run the **Test Gmail Configuration** cell → Should see ✓ success
+
+## Cells to Run (In Order)
+
+| Cell # | Name | Action |
+|--------|------|--------|
+| 2 | Gmail Configuration | Run first to load settings |
+| 3 | Quick Setup | Run to update credentials |
+| 4 | Test Gmail | Run to verify it works |
+| 9 | ISAC Edge PC | Main pipeline (already setup) |
+| 10 | Start All | Execute to begin detection |
+
+## Email Alert Example
+
+**Subject**: `[TRACK-42] person detected at cx=640.0, cy=480.0, conf=0.92`
+
+**Body**: 
+```
+ALERT (async): [TRACK-42] person detected at cx=640.0, cy=480.0, conf=0.92
+```
+
+## Gmail Requirements
+
+✓ 2-Step Verification enabled  
+✓ App Password (16 chars, NOT your regular password)  
+✓ SMTP_USER = Gmail address  
+✓ SMTP_PASS = App password  
+✓ Internet connection  
+
+## If It Doesn't Work
+
+| Issue | Fix |
+|-------|-----|
+| Auth Error | Check app password is 16 chars, enable 2-Step |
+| Timeout | Check internet, check firewall port 587 |
+| No email | Verify recipient address, check spam |
+
+## PowerShell Alternative
+
+```powershell
+$env:EMAIL_SENDER = "you@gmail.com"
+$env:SMTP_USER = "you@gmail.com"
+$env:SMTP_PASS = "xxxx xxxx xxxx xxxx"
+```
+
+Then run cells 2-4 in notebook.
+
+---
+See GMAIL_SETUP_GUIDE.md for detailed instructions

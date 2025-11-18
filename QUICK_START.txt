@@ -1,0 +1,289 @@
+
+
+=========================================================================
+                    QUICK START GUIDE
+=========================================================================
+
+SECTION 1: RUNNING LOCALLY (For Testing & Development)
+===================================================================
+
+1. SINGLE NODE DETECTION (Local PC):
+
+   # In Python terminal:
+   from your_notebook import detector, tracker, pipeline
+
+   import cv2
+   cap = cv2.VideoCapture(0)
+
+   while True:
+       ret, frame = cap.read()
+       if not ret:
+           break
+
+       # Run detection
+       detections = detector.detect(frame)
+       tracks = tracker.update(detections)
+
+       # Process with TensorFlow
+       tf_result = tf_detector.detect(frame)
+
+       # Post-process with PyTorch
+       enhanced = pipeline._pytorch_postprocess(tf_result['detections'])
+
+       # Get 5G status
+       net_status = network_5g.get_network_status()
+       print(f"5G: {net_status['bandwidth_mbps']} Mbps, {net_status['latency_ms']} ms")
+
+       cv2.imshow('Detection', frame)
+       if cv2.waitKey(1) & 0xFF == ord('q'):
+           break
+
+   cap.release()
+   cv2.destroyAllWindows()
+
+
+2. FEDERATED TRAINING:
+
+   # Train distributed model across nodes
+   for round_num in range(100):
+       result = trainer.simulate_training_round(round_num)
+       print(f"Round {round_num}: Loss={result['aggregated']['avg_loss']:.4f}")
+
+       if round_num % 10 == 0:
+           # Distribute updated model over 5G
+           distribution = federated_hub_5g.distribute_model_update(f"v2.{round_num}")
+           print(f"Model distributed in {distribution['distribution_time_seconds']:.2f}s")
+
+
+3. DETECTION AGGREGATION:
+
+   # Aggregate detections from multiple edge nodes
+   mock_data = [
+       ("edge-1", [{"bbox": [100, 150, 250, 280], "confidence": 0.92}]),
+       ("edge-2", [{"bbox": [500, 100, 700, 300], "confidence": 0.87}]),
+       ("edge-3", [{"bbox": [800, 400, 950, 550], "confidence": 0.95}]),
+   ]
+
+   aggregated = federated_hub_5g.aggregate_detections_with_5g(mock_data)
+   print(f"Total detections: {aggregated['total_detections']}")
+
+
+SECTION 2: DEPLOYMENT OPTIONS
+===================================================================
+
+OPTION A: Docker Deployment (Recommended)
+------------------------------------------
+
+1. Install Docker and Docker Compose:
+   https://docs.docker.com/get-docker/
+
+2. Create docker-compose.yml in project directory:
+   (Already provided in FEDERATED_DEPLOYMENT_GUIDE.md)
+
+3. Create .env file:
+   5G_NETWORK_NAME=5G-ISAC-NET
+   TENSORFLOW_OPTIMIZATION=INT8
+   PYTORCH_BACKEND=CPU
+   CENTRAL_HUB_HOST=0.0.0.0
+   CENTRAL_HUB_PORT=5000
+   MQTT_BROKER=mosquitto:1883
+
+4. Deploy:
+   docker-compose build
+   docker-compose up -d
+
+5. Verify:
+   curl http://localhost:5000/api/status
+
+
+OPTION B: Manual Setup on Linux/Raspberry Pi
+----------------------------------------------
+
+1. Install dependencies:
+   sudo apt update
+   sudo apt install python3-pip python3-dev
+   pip install -r requirements.txt
+
+2. For 5G connectivity:
+   # On Raspberry Pi with 5G modem
+   sudo apt install qmi-utils modemmanager
+   qmicli -d /dev/cdc-wdm0 --nas-get-signal-strength
+
+3. Start edge node:
+   python edge_node.py --node-id=edge-pi1 --5g-interface=cdc-wdm0
+
+4. Monitor 5G:
+   watch -n 1 "qmicli -d /dev/cdc-wdm0 --nas-get-signal-strength"
+
+
+OPTION C: NVIDIA Jetson (GPU Acceleration)
+-------------------------------------------
+
+1. Flash JetPack (includes TensorFlow/PyTorch):
+   https://developer.nvidia.com/embedded/jetpack
+
+2. Install edge-specific packages:
+   pip install tensorrt onnx-tensorrt
+   pip install nvidia-pytorch
+
+3. Run with GPU:
+   CUDA_VISIBLE_DEVICES=0 python edge_node_gpu.py
+
+4. Monitor GPU:
+   watch -n 1 nvidia-smi
+
+
+OPTION D: Cloud Deployment (AWS/Azure/GCP)
+-------------------------------------------
+
+1. Deploy Central Hub on cloud server:
+   docker run -p 5000:5000 -p 8000:8000      -e DATABASE_URL=postgresql://...      -e MQTT_BROKER=mosquitto.local      isac-central-hub:latest
+
+2. Deploy edge nodes on edge compute:
+   docker run -p 5000:5000      -e CENTRAL_HUB_URL=central-hub.cloud.com      -e NODE_ID=edge-$(hostname)      isac-edge-node:latest
+
+3. Setup ingress for 5G:
+   # Kubernetes service for 5G nodes
+   kubectl apply -f ingress-5g.yaml
+
+
+SECTION 3: MONITORING & DEBUGGING
+===================================================================
+
+Check 5G Network Status:
+  network_status = network_5g.get_network_status()
+  print(network_status)
+  # Shows: bandwidth, latency, signal strength, quality
+
+Check TensorFlow Performance:
+  tf_stats = tf_detector.get_performance_stats()
+  print(f"FPS: {tf_stats['throughput_fps']:.1f}")
+
+Check PyTorch Training:
+  for round_result in trainer.training_history:
+      print(f"Round {round_result['round']}: {round_result['aggregated']}")
+
+Check Federated Hub Status:
+  status = federated_hub_5g.registered_nodes
+  for node_id, info in status.items():
+      print(f"{node_id}: {info['5g_latency_ms']}ms")
+
+View Route History:
+  import matplotlib.pyplot as plt
+  plt.figure(figsize=(10, 10))
+  route_history.plot_routes()
+  plt.show()
+
+Check API:
+  curl -s http://localhost:5000/api/status | python -m json.tool
+
+
+SECTION 4: PRODUCTION CHECKLIST
+===================================================================
+
+Before going live, ensure:
+
+[  ] 5G modems/dongles are configured
+[  ] TensorFlow models are downloaded and quantized
+[  ] PyTorch models are pre-trained
+[  ] PostgreSQL database is setup (not SQLite)
+[  ] Gmail/SMTP credentials are configured
+[  ] SSL certificates are installed
+[  ] Firewall rules are in place
+[  ] Monitoring (Prometheus/Grafana) is running
+[  ] Logging (ELK) is configured
+[  ] Backup strategies are defined
+[  ] Load balancing is setup
+[  ] High availability is configured
+[  ] Disaster recovery plan is documented
+
+
+SECTION 5: PERFORMANCE TUNING
+===================================================================
+
+To achieve maximum performance:
+
+1. Enable GPU:
+   export CUDA_VISIBLE_DEVICES=0
+   # In code: DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+2. Use batch processing:
+   frames_batch = queue.get_batch(batch_size=8)
+   results = tf_detector.detect_batch(frames_batch)
+
+3. Optimize 5G:
+   # Reduce packet size using compression
+   compressed_data = zlib.compress(detection_data)
+
+4. Model quantization:
+   # Already enabled (INT8)
+   # For more: use TensorFlow quantization-aware training
+
+5. Parallel processing:
+   with ThreadPoolExecutor(max_workers=4) as executor:
+       futures = [executor.submit(process_node, n) for n in nodes]
+       results = [f.result() for f in futures]
+
+
+SECTION 6: TROUBLESHOOTING
+===================================================================
+
+Problem: "5G connection failed"
+Solution: Check modem: qmicli -d /dev/cdc-wdm0 --nas-get-signal-strength
+          Verify network: nmcli device show
+
+Problem: "TensorFlow inference slow"
+Solution: Enable GPU: set CUDA_VISIBLE_DEVICES=0
+          Use INT8 quantization (already done)
+          Check: nvidia-smi or top
+
+Problem: "PyTorch training not converging"
+Solution: Increase learning rate: trainer.learning_rate = 0.01
+          More training rounds: increase epochs
+          Check: trainer.training_history
+
+Problem: "Detection accuracy low"
+Solution: Train more epochs (distributed)
+          Use more data samples
+          Tune confidence threshold
+
+Problem: "Central hub unresponsive"
+Solution: Check: docker ps, docker logs
+          Restart: docker restart isac-hub
+          Monitor resources: docker stats
+
+
+SECTION 7: GETTING HELP
+===================================================================
+
+Documentation:
+  - FEDERATED_DEPLOYMENT_GUIDE.md
+  - GMAIL_SETUP_GUIDE.md
+  - API documentation in dashboard
+
+Logs location:
+  - Central Hub: /var/log/isac/central-hub.log
+  - Edge Node: /var/log/isac/edge-node-{id}.log
+
+Debug mode:
+  export DEBUG=1
+  python edge_node.py
+
+API Test:
+  curl -v http://localhost:5000/api/status
+  curl -X POST http://localhost:5000/api/nodes/register -H "Content-Type: application/json" -d '{...}'
+
+
+===========================================================================
+                    YOU'RE READY TO GO!
+===========================================================================
+
+Start with the Quick Start examples above.
+Deploy to your hardware using one of the deployment options.
+Monitor performance and troubleshoot as needed.
+Scale gradually from 1 node to many nodes.
+Integrate with your existing infrastructure.
+
+For questions or issues, check the logs and documentation first!
+
+===========================================================================

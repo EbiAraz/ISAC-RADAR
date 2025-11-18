@@ -1,0 +1,180 @@
+# ISAC Radar Federated Server - Quick Reference
+
+## Architecture
+
+```
+Central Server (5000/8000) 
+        ↑
+        │ MQTT (1883)
+        │ REST
+        │
+    ┌───┴────┬────────┬────────┐
+    ↓        ↓        ↓        ↓
+  Edge-1   Edge-2   Edge-3   Edge-4
+ (Camera) (Camera) (Camera)  (Radar)
+```
+
+## Quick Commands
+
+### Docker Deployment
+```bash
+# Build all services
+docker-compose build
+
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f central-server
+docker-compose logs -f edge-node-1
+
+# Stop all services
+docker-compose down
+
+# Check status
+docker-compose ps
+```
+
+### Manual Deployment
+```bash
+# Terminal 1: Central Server
+python central_server.py
+
+# Terminal 2: Edge Node 1
+python edge_node.py --node-id=edge-1 --camera=0
+
+# Terminal 3: Edge Node 2
+python edge_node.py --node-id=edge-2 --camera=1
+```
+
+## API Endpoints Quick Ref
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/status` | GET | System status |
+| `/api/nodes` | GET | List all nodes |
+| `/api/nodes/register` | POST | Register new node |
+| `/api/nodes/{id}/status` | GET | Node status |
+| `/api/detections` | GET | Query detections |
+| `/api/detections` | POST | Submit detection |
+| `/api/routes/{node_id}` | GET | Get route history |
+| `/api/analytics` | GET | System analytics |
+
+## Configuration
+
+### .env File
+```env
+# Server
+CENTRAL_SERVER_HOST=0.0.0.0
+CENTRAL_SERVER_PORT=5000
+
+# MQTT
+MQTT_BROKER=mqtt.central.server
+MQTT_PORT=1883
+
+# Database
+DATABASE_TYPE=sqlite
+DATABASE_URL=sqlite:///isac.db
+
+# Edge Node
+NODE_ID=edge-1
+NODE_NAME=Camera-North
+CAMERA_INDEX=0
+
+# Alerts
+EMAIL_SENDER=your-email@gmail.com
+SMTP_PASS=your-app-password
+```
+
+## Verification Checklist
+
+- [ ] Central server running on port 5000
+- [ ] Edge nodes registered
+- [ ] MQTT broker connected
+- [ ] Detections being recorded
+- [ ] API endpoints responding
+- [ ] Email alerts working
+- [ ] WebSocket streaming
+- [ ] Database storing data
+
+## Common Issues & Fixes
+
+**Nodes not connecting:**
+```bash
+# Check MQTT broker
+docker exec mqtt-broker mosquitto_sub -t "isac/+"
+
+# Check network
+docker network inspect isac-federated_default
+```
+
+**No detections:**
+```bash
+# Check edge node logs
+docker logs isac-federated_edge-node-1
+
+# Verify camera
+ls -la /dev/video0
+```
+
+**Database issues:**
+```bash
+# Check database file
+ls -lh isac_detections.db
+
+# Backup database
+cp isac_detections.db isac_detections.db.backup
+```
+
+## Performance Tips
+
+- Use PostgreSQL for >100 detections/sec
+- Use Kubernetes for >1000 detections/sec
+- Deploy edge caching for latency <50ms
+- Use GPU nodes for real-time processing
+
+## Monitoring
+
+```bash
+# Monitor CPU/Memory
+docker stats
+
+# Monitor API calls
+docker logs central-server | grep "POST\|GET"
+
+# Monitor detections
+curl http://localhost:5000/api/status
+
+# Monitor WebSocket
+wscat -c ws://localhost:8000/ws/dashboard
+```
+
+## Network Ports
+
+| Port | Service | Protocol |
+|------|---------|----------|
+| 1883 | MQTT | TCP |
+| 5000 | REST API | HTTP/HTTPS |
+| 8000 | WebSocket | WS/WSS |
+| 9001 | MQTT WebSocket | WS |
+
+## File Structure
+
+```
+isac-federated/
+├── docker-compose.yml
+├── Dockerfile.central
+├── Dockerfile.edge
+├── requirements.txt
+├── .env
+├── central_server.py
+├── edge_node.py
+├── mosquitto.conf
+├── isac_detections.db
+└── config/
+    ├── central_config.yaml
+    └── edge_config.yaml
+```
+
+---
+See FEDERATED_DEPLOYMENT_GUIDE.md for detailed instructions
